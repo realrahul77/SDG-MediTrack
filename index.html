@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediTrack — Medication & Health Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --mint: #0d9e7e;
+    --mint-light: #e6f7f3;
+    --mint-dark: #076e57;
+    --blue: #1a6fb5;
+    --blue-light: #e8f1fb;
+    --red: #e05a5a;
+    --red-light: #fdeaea;
+    --amber: #d4820e;
+    --amber-light: #fff4e0;
+    --bg: #f4f7f9;
+    --surface: #ffffff;
+    --border: #e2e8ef;
+    --text: #1a2332;
+    --muted: #6b7a8f;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* NAV */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo .logo-icon {
+    width: 36px; height: 36px; background: var(--mint); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: white;
+  }
+  .nav-logo span { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--mint-dark); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: transparent; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; color: var(--muted); font-weight: 500; transition: all 0.2s;
+  }
+  .nav-tab:hover { background: var(--mint-light); color: var(--mint-dark); }
+  .nav-tab.active { background: var(--mint-light); color: var(--mint-dark); }
+  .nav-badge { background: var(--mint); color: white; border-radius: 12px; padding: 2px 8px; font-size: 0.75rem; margin-left: 6px; }
+
+  /* PAGES */
+  .page { display: none; padding: 2rem; max-width: 960px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* HERO HEADER */
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text); }
+  .page-header p { color: var(--muted); margin-top: 4px; font-size: 0.95rem; }
+
+  /* STATS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-card .stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .stat-card .stat-value { font-size: 2rem; font-weight: 600; color: var(--text); }
+  .stat-card.mint { border-left: 4px solid var(--mint); }
+  .stat-card.blue { border-left: 4px solid var(--blue); }
+  .stat-card.amber { border-left: 4px solid var(--amber); }
+  .stat-card.red { border-left: 4px solid var(--red); }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: var(--shadow);
+  }
+  .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media(max-width: 600px) { .form-grid, .form-grid.three { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.93rem; color: var(--text);
+    background: var(--surface); transition: border 0.2s; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--mint); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .btn {
+    padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.93rem; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--mint); color: white; }
+  .btn-primary:hover { background: var(--mint-dark); }
+  .btn-danger { background: var(--red-light); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--mint); color: var(--mint); }
+  .btn-outline:hover { background: var(--mint-light); }
+
+  /* MED LIST */
+  .med-list { display: flex; flex-direction: column; gap: 10px; }
+  .med-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; transition: box-shadow 0.2s;
+  }
+  .med-item:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .med-dot {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .med-info { flex: 1; }
+  .med-name { font-weight: 600; font-size: 0.95rem; }
+  .med-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .med-badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+  }
+  .badge-morning { background: var(--amber-light); color: var(--amber); }
+  .badge-afternoon { background: var(--blue-light); color: var(--blue); }
+  .badge-evening { background: #ede8fb; color: #5b3fb5; }
+  .badge-night { background: #e8eaf6; color: #3949ab; }
+  .badge-active { background: var(--mint-light); color: var(--mint-dark); }
+  .badge-paused { background: #f5f5f5; color: #888; }
+
+  /* SCHEDULE TABLE */
+  .schedule-day {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 1.25rem; overflow: hidden;
+  }
+  .schedule-day-header {
+    background: var(--mint-light); padding: 12px 20px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .schedule-day-header span { font-weight: 600; color: var(--mint-dark); }
+  .schedule-dose-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 20px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .schedule-dose-row:last-child { border-bottom: none; }
+  .schedule-dose-row:hover { background: #fafcff; }
+  .dose-time { font-size: 0.82rem; color: var(--muted); width: 80px; flex-shrink: 0; font-weight: 600; }
+  .dose-check {
+    width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s; background: var(--surface);
+  }
+  .dose-check.done { background: var(--mint); border-color: var(--mint); color: white; font-size: 0.75rem; }
+  .dose-check.missed { background: var(--red-light); border-color: var(--red); color: var(--red); font-size: 0.75rem; }
+  .dose-name { flex: 1; font-size: 0.92rem; }
+  .dose-name.done { text-decoration: line-through; color: var(--muted); }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--border); border-radius: 20px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .progress-bar-fill { height: 100%; background: var(--mint); border-radius: 20px; transition: width 0.5s; }
+
+  /* HEALTH LOG */
+  .log-item {
+    display: flex; gap: 14px; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+  .log-body { flex: 1; }
+  .log-title { font-weight: 600; font-size: 0.9rem; }
+  .log-detail { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+  .log-time { font-size: 0.78rem; color: var(--muted); flex-shrink: 0; }
+
+  /* ABOUT PAGE */
+  .about-hero {
+    background: linear-gradient(135deg, var(--mint) 0%, var(--mint-dark) 100%);
+    border-radius: var(--radius); padding: 2.5rem; color: white; margin-bottom: 1.5rem;
+    position: relative; overflow: hidden;
+  }
+  .about-hero h2 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .about-hero p { opacity: 0.9; font-size: 0.95rem; max-width: 540px; line-height: 1.6; }
+  .sdg-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.2); border-radius: 30px;
+    padding: 6px 14px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;
+    border: 1px solid rgba(255,255,255,0.35);
+  }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  @media(max-width:600px){ .info-grid { grid-template-columns: 1fr; } }
+  .info-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.3rem;
+  }
+  .info-card h3 { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mint-dark); margin-bottom: 0.7rem; }
+  .info-card p, .info-card li { font-size: 0.88rem; color: var(--muted); line-height: 1.7; }
+  .info-card ul { padding-left: 1.1rem; }
+  .tech-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
+  .tech-pill {
+    background: var(--mint-light); color: var(--mint-dark); border-radius: 20px;
+    padding: 4px 12px; font-size: 0.8rem; font-weight: 600;
+  }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--text); color: white; padding: 12px 20px; border-radius: 10px;
+    font-size: 0.88rem; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+
+  .empty-state { text-align: center; padding: 2.5rem; color: var(--muted); }
+  .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.7rem; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* REMINDER TOGGLE */
+  .reminder-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .reminder-row:last-child { border-bottom: none; }
+  .toggle-switch { position: relative; width: 42px; height: 24px; cursor: pointer; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--border); border-radius: 24px; transition: 0.3s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--mint); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+  .section-sep { margin: 1.5rem 0; border: none; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon">💊</div>
+    <span>MediTrack</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('medications')">Medications</button>
+    <button class="nav-tab" onclick="showPage('schedule')">Today's Schedule</button>
+    <button class="nav-tab" onclick="showPage('health')">Health Log</button>
+    <button class="nav-tab" onclick="showPage('about')">About Project</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <h1>Good Morning, Rahul 👋</h1>
+    <p>Here's your health summary for today — <span id="today-date"></span></p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card mint">
+      <div class="stat-label">Medications</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Doses Today</div>
+      <div class="stat-value" id="stat-today">0</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Taken</div>
+      <div class="stat-value" id="stat-taken">0</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Missed</div>
+      <div class="stat-value" id="stat-missed">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Today's Adherence</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+      <span style="font-size:0.88rem; color:var(--muted)">Doses taken on time</span>
+      <span id="adherence-pct" style="font-weight:700; color:var(--mint)">0%</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="adherence-bar" style="width:0%"></div></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div class="card">
+      <div class="card-title">⏰ Upcoming Doses</div>
+      <div id="upcoming-list"><div class="empty-state"><div class="empty-icon">📋</div><p>No medications added yet</p></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📢 Reminder Settings</div>
+      <div class="reminder-row">
+        <div><div style="font-size:0.9rem;font-weight:600">Morning Reminder</div><div style="font-size:0.78rem;color:var(--muted)">8:00 AM</div></div>
+        <label class="toggle-switch"><input type="checkbox" checked id="rem-morning"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="reminder-row">
+        <div><div style="font-size:0.9rem;font-weight:600">Afternoon Reminder</div><div style="font-size:0.78rem;color:var(--muted)">1:00 PM</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="rem-afternoon"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="reminder-row">
+        <div><div style="font-size:0.9rem;font-weight:600">Evening Reminder</div><div style="font-size:0.78rem;color:var(--muted)">7:00 PM</div></div>
+        <label class="toggle-switch"><input type="checkbox" checked id="rem-evening"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="reminder-row">
+        <div><div style="font-size:0.9rem;font-weight:600">Night Reminder</div><div style="font-size:0.78rem;color:var(--muted)">10:00 PM</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="rem-night"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MEDICATIONS PAGE -->
+<div class="page" id="page-medications">
+  <div class="page-header">
+    <h1>My Medications</h1>
+    <p>Add and manage all your prescriptions in one place</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ Add New Medication</div>
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>Medicine Name</label>
+        <input type="text" id="med-name" placeholder="e.g. Paracetamol 500mg"/>
+      </div>
+      <div class="form-group">
+        <label>Dosage</label>
+        <input type="text" id="med-dose" placeholder="e.g. 1 tablet"/>
+      </div>
+      <div class="form-group">
+        <label>Time of Day</label>
+        <select id="med-time">
+          <option value="Morning">Morning</option>
+          <option value="Afternoon">Afternoon</option>
+          <option value="Evening">Evening</option>
+          <option value="Night">Night</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Frequency</label>
+        <select id="med-freq">
+          <option value="Daily">Daily</option>
+          <option value="Twice Daily">Twice Daily</option>
+          <option value="Weekly">Weekly</option>
+          <option value="As Needed">As Needed</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="med-start"/>
+      </div>
+      <div class="form-group">
+        <label>End Date (optional)</label>
+        <input type="date" id="med-end"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Notes / Instructions</label>
+      <textarea id="med-notes" placeholder="e.g. Take after meals, avoid dairy..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="addMedication()">Add Medication</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💊 My Medication List</div>
+    <div class="med-list" id="med-list">
+      <div class="empty-state"><div class="empty-icon">💊</div><p>No medications added yet. Use the form above to add your first one.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE PAGE -->
+<div class="page" id="page-schedule">
+  <div class="page-header">
+    <h1>Today's Schedule</h1>
+    <p>Check off your doses as you take them — stay on track!</p>
+  </div>
+  <div id="schedule-container">
+    <div class="empty-state" style="margin-top:2rem;"><div class="empty-icon">📅</div><p>Add medications to see your daily schedule here.</p></div>
+  </div>
+</div>
+
+<!-- HEALTH LOG PAGE -->
+<div class="page" id="page-health">
+  <div class="page-header">
+    <h1>Health Log</h1>
+    <p>Track vitals, symptoms, and notes alongside your medications</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 Log a Health Entry</div>
+    <div class="form-grid three" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>Entry Type</label>
+        <select id="log-type">
+          <option value="vitals">Vitals</option>
+          <option value="symptom">Symptom</option>
+          <option value="note">General Note</option>
+          <option value="doctor">Doctor Visit</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="log-date"/>
+      </div>
+      <div class="form-group">
+        <label>Blood Pressure (optional)</label>
+        <input type="text" id="log-bp" placeholder="e.g. 120/80"/>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:14px;">
+      <div class="form-group">
+        <label>Weight (kg, optional)</label>
+        <input type="number" id="log-weight" placeholder="e.g. 68"/>
+      </div>
+      <div class="form-group">
+        <label>Heart Rate (bpm, optional)</label>
+        <input type="number" id="log-hr" placeholder="e.g. 72"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Notes / Symptoms</label>
+      <textarea id="log-notes" placeholder="Describe any symptoms, side effects, or general notes..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="addHealthLog()">Save Entry</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🩺 Health History</div>
+    <div id="health-log-list">
+      <div class="empty-state"><div class="empty-icon">🩺</div><p>No health entries yet. Start logging your vitals and symptoms above.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div class="page" id="page-about">
+  <div class="page-header">
+    <h1>About This Project</h1>
+    <p>Web Development Final Project — SDG 3: Good Health & Well-being</p>
+  </div>
+
+  <div class="about-hero">
+    <div class="sdg-badge">🌍 UN SDG Goal 3</div>
+    <h2>MediTrack — Medication & Health Tracker</h2>
+    <p>A web application designed to help individuals manage their medications, track health vitals, and build consistent health routines — contributing to SDG 3: Good Health and Well-being.</p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Selected SDG</h3>
+      <p><strong>SDG 3 — Good Health and Well-being</strong><br/><br/>
+      This goal focuses on ensuring healthy lives and promoting well-being for all ages. It targets reducing preventable deaths, fighting diseases, and promoting mental and physical health globally. Medication non-adherence is one of the leading causes of hospital re-admissions and preventable complications worldwide.</p>
+    </div>
+    <div class="info-card">
+      <h3>Problem Statement</h3>
+      <p>Millions of patients — especially elderly individuals and those with chronic conditions — regularly forget to take their medications or take incorrect doses. In India alone, medication non-adherence leads to worsening of conditions like diabetes, hypertension, and tuberculosis, placing a massive burden on the healthcare system and individuals' quality of life.</p>
+    </div>
+    <div class="info-card">
+      <h3>Proposed Solution</h3>
+      <p>MediTrack is a browser-based medication and health tracking web app. Users can add their prescriptions, set reminder preferences, mark doses as taken or missed, and log health vitals like blood pressure and heart rate — all in a clean, intuitive interface with no backend required.</p>
+    </div>
+    <div class="info-card">
+      <h3>Who Will Use It</h3>
+      <ul>
+        <li>Elderly patients managing multiple medications</li>
+        <li>Chronic disease patients (diabetes, hypertension)</li>
+        <li>Caregivers managing medications for family members</li>
+        <li>Health-conscious individuals tracking their wellness</li>
+        <li>Patients following post-surgical medication schedules</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ Key Features</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div style="padding:12px; background:var(--mint-light); border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:var(--mint-dark); margin-bottom:4px;">💊 Medication Management</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Add, view, and delete medications with dosage, schedule, frequency, and instructions. Full CRUD support in-browser.</p>
+      </div>
+      <div style="padding:12px; background:var(--blue-light); border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:var(--blue); margin-bottom:4px;">📅 Daily Schedule Tracker</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">View all doses grouped by time of day. Mark each dose as taken or missed with a single click.</p>
+      </div>
+      <div style="padding:12px; background:var(--amber-light); border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:var(--amber); margin-bottom:4px;">⏰ Reminder Settings</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Toggle morning, afternoon, evening, and night reminders independently to match personal routines.</p>
+      </div>
+      <div style="padding:12px; background:var(--red-light); border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:var(--red); margin-bottom:4px;">🩺 Health Log</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Log vitals including blood pressure, weight, heart rate, and symptom notes with date tracking.</p>
+      </div>
+      <div style="padding:12px; background:#ede8fb; border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:#5b3fb5; margin-bottom:4px;">📊 Adherence Dashboard</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">Real-time stats showing total medications, today's doses, adherence percentage, and missed doses.</p>
+      </div>
+      <div style="padding:12px; background:#e8f5e9; border-radius:10px;">
+        <div style="font-weight:700; font-size:0.9rem; color:#2e7d32; margin-bottom:4px;">💾 Local Data Persistence</div>
+        <p style="font-size:0.82rem; color:var(--muted); line-height:1.6;">All data is saved to localStorage, so your medications and logs persist across browser sessions with no server needed.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🛠️ Technology Stack</div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600; color:var(--muted); width:80px;">Frontend</span>
+        <div class="tech-pills">
+          <span class="tech-pill">HTML5</span>
+          <span class="tech-pill">CSS3</span>
+          <span class="tech-pill">Vanilla JavaScript</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600; color:var(--muted); width:80px;">Storage</span>
+        <div class="tech-pills">
+          <span class="tech-pill">localStorage API</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600; color:var(--muted); width:80px;">Fonts</span>
+        <div class="tech-pills">
+          <span class="tech-pill">DM Serif Display</span>
+          <span class="tech-pill">DM Sans</span>
+          <span class="tech-pill">Google Fonts</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600; color:var(--muted); width:80px;">Backend</span>
+        <div class="tech-pills">
+          <span class="tech-pill" style="background:#f5f5f5; color:#888;">None (client-side only)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🚀 Future Scope</div>
+    <ul style="padding-left:1.2rem; display:flex; flex-direction:column; gap:8px;">
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Push Notifications:</strong> Browser-based push notifications to remind users at the exact scheduled dose time, even when the app is not open.</li>
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Mobile App:</strong> A React Native mobile application to give users a native experience on Android and iOS with alarm integration.</li>
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Caregiver Mode:</strong> Allow family members or caregivers to monitor and update a patient's medication schedule remotely via a shared link.</li>
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Doctor Reports:</strong> Auto-generate PDF medication adherence reports to share with doctors during consultations.</li>
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Drug Interaction Checker:</strong> Integrate an API to warn users about potential interactions between their listed medications.</li>
+      <li style="font-size:0.88rem; color:var(--muted); line-height:1.6;"><strong style="color:var(--text);">Multi-language Support:</strong> Hindi and regional language support to serve a broader Indian population, especially in rural areas.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="background:var(--mint-light); border-color:var(--mint);">
+    <div style="font-size:0.82rem; color:var(--mint-dark); line-height:1.8;">
+      <strong>Project Name:</strong> MediTrack — Medication & Health Tracker<br/>
+      <strong>Student Name:</strong> Rahul Yadav<br/>
+      <strong>SDG:</strong> Goal 3 — Good Health and Well-being<br/>
+      <strong>Tech Stack:</strong> HTML, CSS, JavaScript (no backend)<br/>
+      <strong>File Name:</strong> SDG_MediTrack_RahulYadav.html
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ---- STATE ----
+  let medications = JSON.parse(localStorage.getItem('meditrack_meds') || '[]');
+  let doseLog = JSON.parse(localStorage.getItem('meditrack_doselog') || '{}');
+  let healthLog = JSON.parse(localStorage.getItem('meditrack_health') || '[]');
+
+  function save() {
+    localStorage.setItem('meditrack_meds', JSON.stringify(medications));
+    localStorage.setItem('meditrack_doselog', JSON.stringify(doseLog));
+    localStorage.setItem('meditrack_health', JSON.stringify(healthLog));
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ---- NAVIGATION ----
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    const tabs = ['dashboard','medications','schedule','health','about'];
+    document.querySelectorAll('.nav-tab')[tabs.indexOf(id)].classList.add('active');
+    if (id === 'dashboard') renderDashboard();
+    if (id === 'medications') renderMedList();
+    if (id === 'schedule') renderSchedule();
+    if (id === 'health') renderHealthLog();
+  }
+
+  // ---- DATE HELPERS ----
+  function todayKey() { return new Date().toISOString().slice(0,10); }
+  function formatDate(d) { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }); }
+
+  // ---- MEDICATIONS ----
+  function addMedication() {
+    const name = document.getElementById('med-name').value.trim();
+    const dose = document.getElementById('med-dose').value.trim();
+    const time = document.getElementById('med-time').value;
+    const freq = document.getElementById('med-freq').value;
+    const start = document.getElementById('med-start').value;
+    const end = document.getElementById('med-end').value;
+    const notes = document.getElementById('med-notes').value.trim();
+    if (!name || !dose) { toast('⚠️ Please fill in name and dosage'); return; }
+    medications.push({ id: Date.now(), name, dose, time, freq, start, end, notes, status: 'active' });
+    save();
+    ['med-name','med-dose','med-notes','med-start','med-end'].forEach(id => document.getElementById(id).value = '');
+    renderMedList();
+    toast('✅ Medication added successfully!');
+  }
+
+  function deleteMed(id) {
+    medications = medications.filter(m => m.id !== id);
+    save();
+    renderMedList();
+    toast('🗑️ Medication removed');
+  }
+
+  function toggleMedStatus(id) {
+    const m = medications.find(m => m.id === id);
+    if (m) { m.status = m.status === 'active' ? 'paused' : 'active'; save(); renderMedList(); }
+  }
+
+  const timeColors = {
+    Morning: { bg:'#fff4e0', color:'#d4820e', icon:'🌅' },
+    Afternoon: { bg:'#e8f1fb', color:'#1a6fb5', icon:'☀️' },
+    Evening: { bg:'#ede8fb', color:'#5b3fb5', icon:'🌆' },
+    Night: { bg:'#e8eaf6', color:'#3949ab', icon:'🌙' }
+  };
+
+  function renderMedList() {
+    const list = document.getElementById('med-list');
+    if (!medications.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">💊</div><p>No medications added yet.</p></div>';
+      return;
+    }
+    list.innerHTML = medications.map(m => {
+      const tc = timeColors[m.time] || timeColors.Morning;
+      return `<div class="med-item">
+        <div class="med-dot" style="background:${tc.bg}">${tc.icon}</div>
+        <div class="med-info">
+          <div class="med-name">${m.name}</div>
+          <div class="med-sub">${m.dose} · ${m.freq}${m.notes ? ' · ' + m.notes : ''}</div>
+        </div>
+        <span class="med-badge ${m.status === 'active' ? 'badge-active' : 'badge-paused'}">${m.status}</span>
+        <span class="med-badge badge-${m.time.toLowerCase()}">${m.time}</span>
+        <button class="btn btn-outline btn-sm" onclick="toggleMedStatus(${m.id})">${m.status === 'active' ? 'Pause' : 'Resume'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteMed(${m.id})">Delete</button>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- SCHEDULE ----
+  function renderSchedule() {
+    const container = document.getElementById('schedule-container');
+    const active = medications.filter(m => m.status === 'active');
+    if (!active.length) {
+      container.innerHTML = '<div class="empty-state" style="margin-top:2rem;"><div class="empty-icon">📅</div><p>Add medications to see your daily schedule here.</p></div>';
+      return;
+    }
+    const groups = {};
+    active.forEach(m => {
+      if (!groups[m.time]) groups[m.time] = [];
+      groups[m.time].push(m);
+    });
+    const order = ['Morning','Afternoon','Evening','Night'];
+    const times = { Morning: '8:00 AM', Afternoon: '1:00 PM', Evening: '7:00 PM', Night: '10:00 PM' };
+    container.innerHTML = order.filter(t => groups[t]).map(t => {
+      const meds = groups[t];
+      const tc = timeColors[t];
+      return `<div class="schedule-day">
+        <div class="schedule-day-header" style="background:${tc.bg}">
+          <span style="font-size:1.2rem">${tc.icon}</span>
+          <span style="color:${tc.color}">${t} — ${times[t]}</span>
+        </div>
+        ${meds.map(m => {
+          const key = `${todayKey()}_${m.id}`;
+          const state = doseLog[key] || 'pending';
+          return `<div class="schedule-dose-row">
+            <div class="dose-time">${times[t]}</div>
+            <div class="dose-check ${state === 'taken' ? 'done' : state === 'missed' ? 'missed' : ''}"
+              onclick="cycleDose('${key}', this, '${m.id}')" title="Click to mark">
+              ${state === 'taken' ? '✓' : state === 'missed' ? '✗' : ''}
+            </div>
+            <div class="dose-name ${state === 'taken' ? 'done' : ''}">${m.name} — ${m.dose}</div>
+            <span style="font-size:0.78rem; color:var(--muted)">${m.freq}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+    renderDashboard();
+  }
+
+  function cycleDose(key, el, medId) {
+    const cur = doseLog[key] || 'pending';
+    const next = cur === 'pending' ? 'taken' : cur === 'taken' ? 'missed' : 'pending';
+    doseLog[key] = next;
+    save();
+    el.className = 'dose-check' + (next === 'taken' ? ' done' : next === 'missed' ? ' missed' : '');
+    el.textContent = next === 'taken' ? '✓' : next === 'missed' ? '✗' : '';
+    const nameEl = el.nextElementSibling;
+    nameEl.className = 'dose-name' + (next === 'taken' ? ' done' : '');
+    if (next === 'taken') toast('✅ Dose marked as taken!');
+    if (next === 'missed') toast('❌ Dose marked as missed');
+    if (next === 'pending') toast('↩️ Dose reset');
+    renderDashboard();
+  }
+
+  // ---- DASHBOARD ----
+  function renderDashboard() {
+    const today = todayKey();
+    document.getElementById('today-date').textContent = formatDate(today);
+    const active = medications.filter(m => m.status === 'active');
+    document.getElementById('stat-total').textContent = medications.length;
+    document.getElementById('stat-today').textContent = active.length;
+    const taken = active.filter(m => doseLog[`${today}_${m.id}`] === 'taken').length;
+    const missed = active.filter(m => doseLog[`${today}_${m.id}`] === 'missed').length;
+    document.getElementById('stat-taken').textContent = taken;
+    document.getElementById('stat-missed').textContent = missed;
+    const pct = active.length ? Math.round((taken / active.length) * 100) : 0;
+    document.getElementById('adherence-pct').textContent = pct + '%';
+    document.getElementById('adherence-bar').style.width = pct + '%';
+
+    const upcoming = document.getElementById('upcoming-list');
+    if (!active.length) {
+      upcoming.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No medications added yet</p></div>';
+      return;
+    }
+    const order = ['Morning','Afternoon','Evening','Night'];
+    upcoming.innerHTML = active.sort((a,b) => order.indexOf(a.time) - order.indexOf(b.time))
+      .slice(0, 5).map(m => {
+        const tc = timeColors[m.time];
+        const state = doseLog[`${today}_${m.id}`] || 'pending';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:1.1rem">${tc.icon}</span>
+          <div style="flex:1">
+            <div style="font-size:0.88rem;font-weight:600">${m.name}</div>
+            <div style="font-size:0.76rem;color:var(--muted)">${m.dose} · ${m.time}</div>
+          </div>
+          <span style="font-size:0.75rem;padding:3px 9px;border-radius:20px;background:${state==='taken'?'var(--mint-light)':state==='missed'?'var(--red-light)':'var(--amber-light)'};color:${state==='taken'?'var(--mint-dark)':state==='missed'?'var(--red)':'var(--amber)'}">
+            ${state==='taken'?'✓ Taken':state==='missed'?'✗ Missed':'Pending'}
+          </span>
+        </div>`;
+      }).join('');
+  }
+
+  // ---- HEALTH LOG ----
+  function addHealthLog() {
+    const type = document.getElementById('log-type').value;
+    const date = document.getElementById('log-date').value || todayKey();
+    const bp = document.getElementById('log-bp').value.trim();
+    const weight = document.getElementById('log-weight').value;
+    const hr = document.getElementById('log-hr').value;
+    const notes = document.getElementById('log-notes').value.trim();
+    if (!notes && !bp && !weight && !hr) { toast('⚠️ Please fill in at least one field'); return; }
+    healthLog.unshift({ id: Date.now(), type, date, bp, weight, hr, notes });
+    save();
+    ['log-bp','log-weight','log-hr','log-notes'].forEach(id => document.getElementById(id).value = '');
+    renderHealthLog();
+    toast('✅ Health entry saved!');
+  }
+
+  const logIcons = { vitals: { icon: '🩺', bg: '#e8f1fb' }, symptom: { icon: '🤒', bg: '#fdeaea' }, note: { icon: '📝', bg: '#e6f7f3' }, doctor: { icon: '👨‍⚕️', bg: '#f5f0ff' } };
+
+  function deleteLog(id) {
+    healthLog = healthLog.filter(l => l.id !== id);
+    save();
+    renderHealthLog();
+    toast('🗑️ Entry removed');
+  }
+
+  function renderHealthLog() {
+    const list = document.getElementById('health-log-list');
+    if (!healthLog.length) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">🩺</div><p>No health entries yet.</p></div>';
+      return;
+    }
+    list.innerHTML = healthLog.map(l => {
+      const li = logIcons[l.type] || logIcons.note;
+      const details = [l.bp && `BP: ${l.bp}`, l.weight && `Weight: ${l.weight}kg`, l.hr && `HR: ${l.hr}bpm`].filter(Boolean).join(' · ');
+      return `<div class="log-item">
+        <div class="log-icon" style="background:${li.bg}">${li.icon}</div>
+        <div class="log-body">
+          <div class="log-title">${l.type.charAt(0).toUpperCase()+l.type.slice(1)}${details ? ' — ' + details : ''}</div>
+          ${l.notes ? `<div class="log-detail">${l.notes}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="log-time">${formatDate(l.date)}</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteLog(${l.id})">Remove</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- INIT ----
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('log-date').value = todayKey();
+    document.getElementById('med-start').value = todayKey();
+    renderDashboard();
+    renderMedList();
+  });
+</script>
+</body>
+</html>
